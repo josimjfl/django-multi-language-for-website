@@ -1,16 +1,23 @@
-# Django Multilingual Website Tutorial (English + বাংলা)
+Django i18n (অনুবাদ) যুক্ত করার টিউটোরিয়াল Django Multi Language Translation webstie Tutorial.
+---
 
-This tutorial will walk you through setting up a multilingual website in Django that supports English and Bengali (বাংলা).
+### 📄 `django_translation_tutorial.md`
+
+````markdown
+# 🌐 Django Website Translation (i18n) Setup Tutorial
+
+This tutorial shows how to add multi-language (e.g., English and Bangla) support to your Django website using the built-in internationalization (i18n) system.
 
 ---
 
-## 🔧 Step 1: Update `settings.py`
+## ✅ Step 1: Enable i18n in Django Settings
+
+In your `settings.py`, add or check the following settings:
 
 ```python
-LANGUAGE_CODE = 'en'
 USE_I18N = True
-USE_L10N = True
-USE_TZ = True
+
+LANGUAGE_CODE = 'en'
 
 LANGUAGES = [
     ('en', 'English'),
@@ -20,125 +27,155 @@ LANGUAGES = [
 LOCALE_PATHS = [
     BASE_DIR / 'locale',
 ]
+````
 
-MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.locale.LocaleMiddleware',  # Important
-    'django.middleware.common.CommonMiddleware',
-    ...
-]
+---
+
+## ✅ Step 2: Use `{% trans %}` or `{% blocktrans %}` in Templates
+
+Wrap text like this:
+
+```django
+<!-- For single words or short phrases -->
+<h1>{% trans "Welcome" %}</h1>
+
+<!-- For longer paragraphs or variables inside text -->
+{% blocktrans %}
+  Hello {{ username }}, welcome to our platform!
+{% endblocktrans %}
 ```
 
 ---
 
-## 🌐 Step 2: Update `urls.py`
+## ✅ Step 3: Mark Strings in Python Code for Translation
+
+Use `gettext` (aliased as `_`) in views, models, forms, etc.
 
 ```python
-from django.conf.urls.i18n import i18n_patterns
-from django.contrib import admin
-from django.urls import path
-from myapp import views
-
-urlpatterns = i18n_patterns(
-    path('admin/', admin.site.urls),
-    path('', views.home, name='home'),
-)
-
-# Add this to handle language switch
-from django.views.i18n import set_language
-urlpatterns += [
-    path('set-language/', set_language, name='set_language'),
-]
-```
-
----
-
-## 📄 Step 3: Create Your View
-
-```python
-# views.py
-from django.shortcuts import render
 from django.utils.translation import gettext as _
 
 def home(request):
-    context = {
-        'message': _("Welcome to our website!"),
-    }
-    return render(request, 'home.html', context)
+    message = _("Welcome to our website!")
+    return render(request, 'home.html', {'message': message})
 ```
 
 ---
 
-## 🎨 Step 4: Create the Template
+## ✅ Step 4: Create Translation Files
 
-```html
-<!-- templates/home.html -->
-{% load i18n %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{% trans "Home Page" %}</title>
-</head>
-<body>
-    <h1>{{ message }}</h1>
-
-    <form action="{% url 'set_language' %}" method="post">
-        {% csrf_token %}
-        <select name="language">
-            <option value="en">English</option>
-            <option value="bn">বাংলা</option>
-        </select>
-        <input type="submit" value="Change Language">
-    </form>
-</body>
-</html>
-```
-
----
-
-## 📝 Step 5: Generate `.po` Translation Files
+Run this command to create `.po` files for each language:
 
 ```bash
-# Generate messages for Bengali
-python manage.py makemessages -l bn
+django-admin makemessages -l bn
 ```
 
-Edit the generated `locale/bn/LC_MESSAGES/django.po` file:
+It will generate:
+📁 `locale/bn/LC_MESSAGES/django.po`
+
+---
+
+## ✅ Step 5: Translate the Strings
+
+Open `locale/bn/LC_MESSAGES/django.po`
+Translate each `msgid` to `msgstr`. Example:
 
 ```po
-msgid "Welcome to our website!"
-msgstr "আমাদের ওয়েবসাইটে স্বাগতম!"
-
-msgid "Home Page"
-msgstr "হোম পেজ"
+msgid "Welcome"
+msgstr "স্বাগতম"
 ```
 
-Then compile the messages:
+---
+
+## ✅ Step 6: Compile Translations
+
+After editing `.po` files, compile them with:
 
 ```bash
-python manage.py compilemessages
+django-admin compilemessages
+```
+
+It creates `.mo` files Django uses to load translations.
+
+---
+
+## ✅ Step 7: Language Switcher View
+
+In your `views.py`, add:
+
+```python
+from django.utils import translation
+from django.http import HttpResponseRedirect
+
+def set_language(request):
+    lang = request.GET.get('lang', 'en')
+    if lang in ['en', 'bn']:
+        translation.activate(lang)
+        request.session['django_language'] = lang
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 ```
 
 ---
 
-## 🚀 Step 6: Run the Server
+## ✅ Step 8: Language Switcher Link
+
+In your template:
+
+```html
+<a href="{% url 'set_language' %}?lang=en">English</a> |
+<a href="{% url 'set_language' %}?lang=bn">বাংলা</a>
+```
+
+Make sure the `set_language` view is mapped in `urls.py`.
+
+---
+
+## ✅ Step 9: Use the Translated Text
+
+Anywhere you use `{% trans %}` or `_()`, the translated text will be shown automatically based on session language.
+
+---
+
+## ✅ Optional: Detect & Use Browser Language
+
+You can auto-detect language using middleware or accept-language headers. But session-based approach is easier and reliable.
+
+---
+
+## ✅ Notes
+
+* Static HTML files must be translated manually.
+* Use `makemessages -l bn -e html,txt,py` if you're translating multiple file types.
+* You must restart the server after changing translations.
+
+---
+
+## ✅ Bonus: Paragraph Translation with Variables
+
+```django
+{% blocktrans with total=order.total user_name=user.name %}
+  Hello {{ user_name }}, your order total is {{ total }}.
+{% endblocktrans %}
+```
+
+---
+
+## ✅ Helpful Commands
 
 ```bash
-python manage.py runserver
+# Create message file for a language
+django-admin makemessages -l bn
+
+# Compile translated messages
+django-admin compilemessages
 ```
 
-Visit [http://localhost:8000](http://localhost:8000), switch language using the dropdown, and enjoy your multilingual website!
+---
+
+Enjoy your multilingual Django app! 🌍
+
+```
 
 ---
 
-## ✅ Tips
-
-* Use `{% trans %}` or `gettext` for all text you want to translate.
-* Avoid using hardcoded text in templates/views.
-* Remember to run `makemessages` and `compilemessages` every time you add new translatable strings.
-
----
-
-Happy Coding! 🌐🇧🇩🇬🇧
+**If you'd like, I can export this tutorial as a downloadable `.md` file or copy it to your project folder. Let me know!**
+```
