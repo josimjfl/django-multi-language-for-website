@@ -1,6 +1,6 @@
 Django i18n (অনুবাদ) যুক্ত করার টিউটোরিয়াল Django Multi Language Translation webstie Tutorial.
 ---
-
+Django version ==5.2
 ### 📄 `django_translation_tutorial.md`
 
 ````markdown
